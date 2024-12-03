@@ -1,0 +1,9 @@
+book = ["https://www.youtube.com/watch?v=aGtIHKEdCds", "https://www.youtube.com/watch?v=hjS0dQDgbjo"]
+
+computer = ["https://www.youtube.com/watch?v=H-tAzh-nuV8", "https://www.youtube.com/watch?v=PPmQd2zWdP0"]
+
+before = ["https://www.youtube.com/watch?v=pDqITge_TGs", "https://www.youtube.com/watch?v=bq-HmgjGzmw"]
+
+
+chair = ["https://www.youtube.com/watch?v=PPmQd2zWdP0", "https://www.youtube.com/watch?v=4Nh1iFv2BMc"]
+
