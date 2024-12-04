@@ -141,6 +141,9 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
                 if val_score > best_val_score:
                     best_val_score = val_score
                     model_name = f'{save_model}best_model_{steps:06d}.pt'
+                    if not os.path.exists(save_model):
+                        os.mkdir(save_model)
+                        
                     torch.save(model.module.state_dict(), model_name)
                     print(f'Model saved as {model_name}')
 
