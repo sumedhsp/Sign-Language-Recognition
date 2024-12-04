@@ -60,7 +60,7 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
     i3d = InceptionI3d(num_classes=100, in_channels=3)
     i3d.load_state_dict(torch.load('pre_trained_100.pt'))
     feature_extractor = I3DFeatureExtractor(i3d)
-    num_classes = 2
+    num_classes = dataset.num_classes
     model = SignLanguageRecognitionModelVision(feature_extractor, num_classes)
 
     if weights:
@@ -82,11 +82,11 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
     epoch = 0
     best_val_score = 0
 
-    maxSteps = 10
-    maxEpochs = 10
+    maxEpochs = 400
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, factor=0.3)
-    while steps < maxSteps and epoch < maxEpochs:  # Training loop
+    while steps < configs.max_steps and epoch < maxEpochs:  # Training loop
         print(f'Epoch {epoch}/{maxEpochs}')
+        print(f'Step {steps}/{configs.max_steps}')
         print('-' * 10)
 
         epoch += 1
