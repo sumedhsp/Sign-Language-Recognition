@@ -108,13 +108,13 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
                 inputs = inputs.cuda()
 
                 # Process labels
-                print (labels.shape, labels)
+                #print (labels.shape, labels)
                 labels = labels.cuda()
 
                 with torch.set_grad_enabled(phase == 'train'):
                     logits = model(inputs)  # Model predictions
-                    print ("Logits", logits)
-                    print ("Labels", labels)
+                    #print ("Logits", logits)
+                    #print ("Labels", labels)
                     loss = F.cross_entropy(logits, labels)
 
                     # Update metrics
@@ -143,7 +143,7 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
                     model_name = f'{save_model}best_model_{steps:06d}.pt'
                     if not os.path.exists(save_model):
                         os.mkdir(save_model)
-                        
+
                     torch.save(model.module.state_dict(), model_name)
                     print(f'Model saved as {model_name}')
 
