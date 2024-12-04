@@ -55,7 +55,7 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
 
     # Setup the model
     i3d = InceptionI3d(num_classes=100, in_channels=3)
-    i3d.load_state_dict(torch.load('pre_trained_100.pt'))
+    i3d.load_state_dict(torch.load('pre_trained_100.pt', weights_only=True))
     feature_extractor = I3DFeatureExtractor(i3d)
     num_classes = dataset.num_classes
     model = SignLanguageRecognitionModel(feature_extractor, num_classes)
