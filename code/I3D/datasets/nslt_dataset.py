@@ -121,11 +121,11 @@ def make_dataset(split_file, split, root, mode, num_classes):
             count_skipping += 1
             continue
 
-        label = np.zeros((num_classes, num_frames), np.float32)
+        label = data[vid]['action'][0] #np.zeros((num_classes, num_frames), np.float32)
 
-        for l in range(num_frames):
-            c_ = data[vid]['action'][0]
-            label[c_][l] = 1
+        #for l in range(num_frames):
+        #    c_ = data[vid]['action'][0]
+        #    label[c_][l] = 1
 
         if len(vid) == 5:
             dataset.append((vid, label, src, 0, data[vid]['action'][2] - data[vid]['action'][1]))
@@ -184,7 +184,7 @@ class NSLT(data_utl.Dataset):
 
         imgs = self.transforms(imgs)
 
-        ret_lab = torch.from_numpy(label)
+        ret_lab = torch.tensor(label, dtype=torch.long)
         ret_img = video_to_tensor(imgs)
 
         return ret_img, ret_lab, vid
@@ -209,8 +209,8 @@ class NSLT(data_utl.Dataset):
         else:
             padded_imgs = imgs
 
-        label = label[:, 0]
-        label = np.tile(label, (total_frames, 1)).transpose((1, 0))
+        #label = label[:, 0]
+        #label = np.tile(label, (total_frames, 1)).transpose((1, 0))
 
         return padded_imgs, label
 

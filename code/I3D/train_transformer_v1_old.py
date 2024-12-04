@@ -54,7 +54,7 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
     dataloaders = {'train': dataloader, 'test': val_dataloader}
 
     # Setup the model
-    i3d = InceptionI3d(num_classes=100, in_channels=3)
+    i3d = InceptionI3d(num_classes=300, in_channels=3)
     i3d.load_state_dict(torch.load('pre_trained_100.pt'))
     feature_extractor = I3DFeatureExtractor(i3d)
     num_classes = dataset.num_classes
@@ -66,7 +66,7 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
 
     for param in model.feature_extractor.parameters():
         param.requires_grad = False
-      
+    
     model = model.cuda()
     model = nn.DataParallel(model)
 
@@ -79,11 +79,9 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
     epoch = 0
     best_val_score = 0
 
-    maxEpochs = 100
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, factor=0.3)
-    while steps < configs.max_steps and epoch < maxEpochs:  # Training loop
+    while steps < configs.max_steps and epoch < 400:  # Training loop
         print(f'Step {steps}/{configs.max_steps}')
-        print (f'Epochs {epoch}/{maxEpochs}')
         print('-' * 10)
 
         epoch += 1
@@ -95,27 +93,20 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
 
             tot_loss = 0.0
             num_iter = 0
-            correct = 0
-            total = 0
             optimizer.zero_grad()
 
             # Iterate over data
             for inputs, labels, _ in dataloaders[phase]:
                 num_iter += 1
                 inputs = inputs.cuda()
-
                 labels = labels.cuda()
 
                 with torch.set_grad_enabled(phase == 'train'):
                     logits = model(inputs)
                     loss = F.cross_entropy(logits, labels)
 
-                    # Update metrics
-                    tot_loss += loss.item()
-                    _, preds = torch.max(logits, 1)  # Predicted class indices
-                    correct += torch.sum(preds == labels).item()
-                    total += labels.size(0)
 
+                    
                     if phase == 'train':
                         loss.backward()
                         if num_iter == num_steps_per_update:
@@ -123,12 +114,7 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
                             optimizer.step()
                             optimizer.zero_grad()
 
-                
-            # Calculate average loss and accuracy
-            epoch_loss = tot_loss / num_iter
-            epoch_acc = correct / total
-
-            print(f'{phase.capitalize()} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}')
+                tot_loss += loss.item()
 
             if phase == 'test':
                 val_score = tot_loss / num_iter
@@ -145,9 +131,9 @@ if __name__ == '__main__':
     mode = 'rgb'
     root = {'word': '../../data/WLASL2000'}
     save_model = 'checkpoints/'
-    train_split = 'preprocess/nslt_100.json'
+    train_split = 'preprocess/nslt_300.json'
     weights = None
-    config_file = 'configfiles/asl100.ini'
+    config_file = 'configfiles/asl300.ini'
 
     configs = Config(config_file)
     run(configs=configs, mode=mode, root=root, save_model=save_model, train_split=train_split, weights=weights)
