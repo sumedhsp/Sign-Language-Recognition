@@ -10,6 +10,15 @@ from torch.autograd import Variable
 from torchvision import transforms
 import videotransforms
 
+import torch.distributed as dist
+from torch.utils.data.distributed import DistributedSampler
+
+# Initialize the process group
+dist.init_process_group(backend='nccl')
+local_rank = int(os.environ['LOCAL_RANK'])
+torch.cuda.set_device(local_rank)
+
+
 import numpy as np
 
 from configs import Config
@@ -19,7 +28,8 @@ from datasets.nslt_dataset import NSLT as Dataset
 from custom_models2 import SignLanguageRecognitionModelVision, I3DFeatureExtractor  # Ensure your model script is imported
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+# os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+os.environ["CUDA_VISIBLE_DEVICES"] = ','.join(map(str, range(torch.cuda.device_count())))
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-mode', type=str, help='rgb or flow')
@@ -45,8 +55,10 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
 
     print ("Before dataset loading")
     dataset = Dataset(train_split, 'train', root, mode, train_transforms)
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=configs.batch_size, shuffle=True, num_workers=0,
-                                             pin_memory=True)
+    train_sampler = DistributedSampler(dataset, shuffle=True)
+    # dataloader = torch.utils.data.DataLoader(dataset, batch_size=configs.batch_size, shuffle=True, num_workers=0,
+    #                                          pin_memory=True)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=configs.batch_size, sampler=train_sampler, num_workers=4,pin_memory=True)
 
     val_dataset = Dataset(train_split, 'test', root, mode, test_transforms)
     print (val_dataset)
@@ -70,8 +82,10 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
     for param in model.feature_extractor.parameters():
         param.requires_grad = False
 
-    model = model.cuda()
-    model = nn.DataParallel(model)
+    # model = model.cuda()
+    # model = nn.DataParallel(model)
+    model = model.cuda(local_rank)
+    model = nn.parallel.DistributedDataParallel(model, device_ids=[local_rank])
 
     lr = configs.init_lr
     weight_decay = configs.adam_weight_decay
