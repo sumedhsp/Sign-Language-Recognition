@@ -11,12 +11,8 @@ from torchvision import transforms
 import videotransforms
 
 import torch.distributed as dist
-from torch.utils.data.distributed import DistributedSampler
 
-# Initialize the process group
-dist.init_process_group(backend='nccl')
-local_rank = int(os.environ['LOCAL_RANK'])
-torch.cuda.set_device(local_rank)
+
 
 
 import numpy as np
@@ -55,10 +51,10 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
 
     print ("Before dataset loading")
     dataset = Dataset(train_split, 'train', root, mode, train_transforms)
-    train_sampler = DistributedSampler(dataset, shuffle=True)
-    # dataloader = torch.utils.data.DataLoader(dataset, batch_size=configs.batch_size, shuffle=True, num_workers=0,
-    #                                          pin_memory=True)
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=configs.batch_size, sampler=train_sampler, num_workers=4,pin_memory=True)
+    
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=configs.batch_size, shuffle=True, num_workers=0,
+                                             pin_memory=True)
+
 
     val_dataset = Dataset(train_split, 'test', root, mode, test_transforms)
     print (val_dataset)
@@ -170,7 +166,7 @@ if __name__ == '__main__':
     save_model = 'checkpoints/'
     train_split = 'preprocess/nslt_100.json'
     weights = None
-    config_file = 'configfiles/asl100.ini'
+    config_file = 'configfiles/asl100v2.ini'
 
     configs = Config(config_file)
     run(configs=configs, mode=mode, root=root, save_model=save_model, train_split=train_split, weights=weights)
