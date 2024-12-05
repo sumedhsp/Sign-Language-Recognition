@@ -41,9 +41,9 @@ class PositionalEncoding(nn.Module):
         return self.dropout(x)
 
 # Define the Transformer Model
-class SignLanguageTransformer(nn.Module):
+class SignLanguageTransformerLite(nn.Module):
     def __init__(self, d_model=1024, nhead=2, num_layers=1, num_classes=100):
-        super(SignLanguageTransformer, self).__init__()
+        super(SignLanguageTransformerLite, self).__init__()
         self.pos_encoder = PositionalEncoding(d_model)
         encoder_layers = nn.TransformerEncoderLayer(d_model=d_model, nhead=nhead)
         self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers=num_layers)
@@ -57,11 +57,11 @@ class SignLanguageTransformer(nn.Module):
         return x
 
 # Combine the I3D Feature Extractor and Transformer
-class SignLanguageRecognitionModel(nn.Module):
+class SignLanguageRecognitionModelLite(nn.Module):
     def __init__(self, i3d_feature_extractor, num_classes):
-        super(SignLanguageRecognitionModel, self).__init__()
+        super(SignLanguageRecognitionModelLite, self).__init__()
         self.feature_extractor = i3d_feature_extractor
-        self.transformer = SignLanguageTransformer(d_model=1024, nhead=2, num_layers=1, num_classes=num_classes)
+        self.transformer = SignLanguageTransformerLite(d_model=1024, nhead=2, num_layers=1, num_classes=num_classes)
 
     def forward(self, x):
         # x shape: [batch_size, C, T, H, W]
