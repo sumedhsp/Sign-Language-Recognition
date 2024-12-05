@@ -20,7 +20,7 @@ from pytorch_i3d import InceptionI3d
 from datasets.nslt_dataset import NSLT as Dataset
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+os.environ["CUDA_VISIBLE_DEVICES"] = ','.join(map(str, range(torch.cuda.device_count())))  #'0'
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-mode', type=str, help='rgb or flow')
@@ -63,11 +63,11 @@ def run(configs,
 
     # setup the model
     if mode == 'flow':
-        i3d = InceptionI3d(400, in_channels=2)
+        i3d = InceptionI3d(100, in_channels=2)
         i3d.load_state_dict(torch.load('weights/flow_imagenet.pt'))
     else:
-        i3d = InceptionI3d(400, in_channels=3)
-        i3d.load_state_dict(torch.load('weights/rgb_imagenet.pt'))
+        i3d = InceptionI3d(100, in_channels=3)
+        i3d.load_state_dict(torch.load('rgb_imagenet.pt'))
 
     num_classes = dataset.num_classes
     i3d.replace_logits(num_classes)
@@ -110,7 +110,7 @@ def run(configs,
             num_iter = 0
             optimizer.zero_grad()
 
-            confusion_matrix = np.zeros((num_classes, num_classes), dtype=np.int)
+            confusion_matrix = np.zeros((num_classes, num_classes), dtype=np.int32)
             # Iterate over data.
             for data in dataloaders[phase]:
                 num_iter += 1
@@ -193,11 +193,11 @@ if __name__ == '__main__':
     root = {'word': '../../data/WLASL2000'}
 
     save_model = 'checkpoints/'
-    train_split = 'preprocess/nslt_2000.json'
+    train_split = 'preprocess/nslt_100.json'
 
     # weights = 'archived/asl2000/FINAL_nslt_2000_iters=5104_top1=32.48_top5=57.31_top10=66.31.pt'
     weights = None
-    config_file = 'configfiles/asl2000.ini'
+    config_file = 'configfiles/asl100.ini'
 
     configs = Config(config_file)
     print(root, train_split)
