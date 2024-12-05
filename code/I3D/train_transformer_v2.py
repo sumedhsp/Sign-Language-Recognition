@@ -78,10 +78,10 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
     for param in model.feature_extractor.parameters():
         param.requires_grad = False
 
-    # model = model.cuda()
-    # model = nn.DataParallel(model)
-    model = model.cuda(local_rank)
-    model = nn.parallel.DistributedDataParallel(model, device_ids=[local_rank])
+    model = model.cuda()
+    model = nn.DataParallel(model)
+    # model = model.cuda(local_rank)
+    # model = nn.parallel.DistributedDataParallel(model, device_ids=[local_rank])
 
     lr = configs.init_lr
     weight_decay = configs.adam_weight_decay
