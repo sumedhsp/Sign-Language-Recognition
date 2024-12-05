@@ -55,7 +55,7 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
 
     # Setup the model
     i3d = InceptionI3d(num_classes=100, in_channels=3)
-    i3d.load_state_dict(torch.load('pre_trained_100.pt'))
+    i3d.load_state_dict(torch.load('pre_trained_100.pt', weights_only=True))
     feature_extractor = I3DFeatureExtractor(i3d)
     num_classes = dataset.num_classes
     model = SignLanguageRecognitionModel(feature_extractor, num_classes)
@@ -135,6 +135,9 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
                 if val_score > best_val_score:
                     best_val_score = val_score
                     model_name = f'{save_model}best_model_{steps:06d}.pt'
+                    if not os.path.exists(save_model):
+                        os.mkdir(save_model)
+                        
                     torch.save(model.module.state_dict(), model_name)
                     print(f'Model saved as {model_name}')
 

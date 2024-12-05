@@ -70,7 +70,7 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
     print ("Before model setup")
     # Setup the model
     i3d = InceptionI3d(num_classes=100, in_channels=3)
-    i3d.load_state_dict(torch.load('pre_trained_100.pt'))
+    i3d.load_state_dict(torch.load('pre_trained_100.pt', weights_only=True))
     feature_extractor = I3DFeatureExtractor(i3d)
     num_classes = dataset.num_classes
     model = SignLanguageRecognitionModelVision(feature_extractor, num_classes)
@@ -122,13 +122,13 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
                 inputs = inputs.cuda()
 
                 # Process labels
-                print (labels.shape, labels)
+                #print (labels.shape, labels)
                 labels = labels.cuda()
 
                 with torch.set_grad_enabled(phase == 'train'):
                     logits = model(inputs)  # Model predictions
-                    print ("Logits", logits)
-                    print ("Labels", labels)
+                    #print ("Logits", logits)
+                    #print ("Labels", labels)
                     loss = F.cross_entropy(logits, labels)
 
                     # Update metrics
@@ -155,6 +155,9 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
                 if val_score > best_val_score:
                     best_val_score = val_score
                     model_name = f'{save_model}best_model_{steps:06d}.pt'
+                    if not os.path.exists(save_model):
+                        os.mkdir(save_model)
+
                     torch.save(model.module.state_dict(), model_name)
                     print(f'Model saved as {model_name}')
 
@@ -162,14 +165,12 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
 
 
 if __name__ == '__main__':
-    print ("Before mode")
     mode = 'rgb'
-    root = {'word': 'WLASL2000/'}
+    root = {'word': '../../data/WLASL2000'}
     save_model = 'checkpoints/'
-    train_split = 'nslt_custom.json'
+    train_split = 'preprocess/nslt_100.json'
     weights = None
-    config_file = 'asl100.ini'
+    config_file = 'configfiles/asl100.ini'
 
     configs = Config(config_file)
-    print ("Before run command")
     run(configs=configs, mode=mode, root=root, save_model=save_model, train_split=train_split, weights=weights)
