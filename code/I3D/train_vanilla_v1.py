@@ -65,7 +65,7 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
     lr = 1e-4
     weight_decay = 1e-5  
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.transformer.parameters(), lr=lr, weight_decay=weight_decay)
+    optimizer = optim.Adam(model.module.transformer.parameters(), lr=lr, weight_decay=weight_decay)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 
     num_epochs = 100
