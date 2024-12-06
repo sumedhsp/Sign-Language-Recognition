@@ -99,13 +99,15 @@ def make_dataset(split_file, split, root, mode, num_classes):
         if mode == 'flow':
             num_frames = num_frames // 2
 
-        label = np.zeros((num_classes, num_frames), np.float32)
+        class_id = data[vid]['action'][0]
+        label = class_id
+
 
         # dataset.append((vid, data[vid]['action'][0], data[vid]['action'][1], data[vid]['action'][2], "{}".format(vid)))
-        dataset.append((vid, data[vid]['action'][0], 0, num_frames, "{}".format(vid)))
+        dataset.append((vid, label, 0, num_frames, "{}".format(vid)))
         # dataset.append((vid, label, 0, data[vid]['action'][2] - data[vid]['action'][1], "{}".format(vid)))
         i += 1
-    print(len(dataset))
+
     return dataset
 
 
@@ -152,7 +154,9 @@ class NSLT(data_utl.Dataset):
 
         imgs = self.transforms(imgs)
         ret_img = video_to_tensor(imgs)
-        return ret_img, label, vid
+        ret_lab = torch.tensor(label, dtype=torch.long)
+
+        return ret_img, ret_lab, vid
 
     def __len__(self):
         return len(self.data)
