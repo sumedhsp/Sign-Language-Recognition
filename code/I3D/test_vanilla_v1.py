@@ -150,8 +150,9 @@ def run(init_lr=0.1,
     labels_np = all_labels.cpu().numpy()
 
     # Printing the labels and outputs to validate in local machine
-    print (outputs_np)
-    print (labels_np)
+    
+    np.savetxt('outputs.txt', outputs_np, delimiter=',')
+    np.savetxt('labels.txt', labels_np, delimiter=',')
 
     topk = (1, 5, 10)
     topkmetrics = compute_topk_tp_fp(all_outputs, all_labels, num_classes, topk)
@@ -175,7 +176,7 @@ def run(init_lr=0.1,
     print(classification_report(all_labels, all_preds, digits=4))
 
     print("Confusion Matrix:")
-    print(confusion_matrix(all_labels, all_preds))
+    np.save('confusionMatrix.npy', confusion_matrix(all_labels, all_preds))
 
 if __name__ == '__main__':
     # ================== test i3d on a dataset ==============
