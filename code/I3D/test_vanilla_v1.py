@@ -43,7 +43,7 @@ def compute_topk_tp_fp(outputs, labels, num_classes, topk=(1, 5, 10)):
     topk_metrics = {k: {'TP': defaultdict(int), 'FP': defaultdict(int)} for k in topk}
     
     # Move tensors to CPU and convert to numpy for processing
-    outputs_np = outputs.cpu().numpy()
+    outputs_np = outputs.detach().cpu().numpy()
     labels_np = labels.cpu().numpy()
     
     # Get the indices of the top K predictions for each sample
