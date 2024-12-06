@@ -144,7 +144,7 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
                 epochs_no_improve = 0
 
                 # Save the best model
-                checkpoint_path = os.path.join(checkpoint_dir, f'best_model_{epoch+1}_{[{epoch+1}/{num_epochs}]}.pth')
+                checkpoint_path = os.path.join(checkpoint_dir, f"best_model_{epoch}_{val_epoch_accuracy:.0f}.pth")
                 torch.save(model.state_dict(), checkpoint_path)
                 print(f"Validation accuracy improved. Model saved to {checkpoint_path}\n")
             else:
