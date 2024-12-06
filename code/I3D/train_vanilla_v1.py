@@ -14,7 +14,7 @@ import numpy as np
 
 from configs import Config
 from pytorch_i3d import InceptionI3d
-from nslt_dataset import NSLT as Dataset
+from datasets.nslt_dataset import NSLT as Dataset
 
 from custom_models import SignLanguageRecognitionModel, I3DFeatureExtractor  # Ensure your model script is imported
 
@@ -73,7 +73,7 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
 
     checkpoint_dir = './checkpoints'
     os.makedirs(checkpoint_dir, exist_ok=True)
-    best_val_accuracy = -1
+    best_val_accuracy = 0
 
     for epoch in range(num_epochs):
         # Training phase
