@@ -146,18 +146,25 @@ def run(init_lr=0.1,
     all_outputs = torch.cat(all_outputs, dim=0)
     all_labels = torch.cat(all_labels, dim=0)
     
+    outputs_np = all_outputs.detach().cpu().numpy()
+    labels_np = all_labels.cpu().numpy()
+
+    # Printing the labels and outputs to validate in local machine
+    print (outputs_np)
+    print (labels_np)
+
     topk = (1, 5, 10)
     topkmetrics = compute_topk_tp_fp(all_outputs, all_labels, num_classes, topk)
 
 
     # Compute per-class Top-K average accuracy (Precision)
-    per_class_accuracy = compute_per_class_topk_accuracy(topkmetrics, num_classes, topk)
+    #per_class_accuracy = compute_per_class_topk_accuracy(topkmetrics, num_classes, topk)
 
     # Display the results
-    for k in topk:
-        print(f"\nTop-{k} Per-Class Accuracy (Precision):")
-        for cls in range(num_classes):
-            print(f"Class {cls}: {per_class_accuracy[k][cls]*100:.2f}%")
+    #for k in topk:
+    #    print(f"\nTop-{k} Per-Class Accuracy (Precision):")
+    #    for cls in range(num_classes):
+    #        print(f"Class {cls}: {per_class_accuracy[k][cls]*100:.2f}%")
 
 
     _, preds = torch.max(all_outputs, 1)
