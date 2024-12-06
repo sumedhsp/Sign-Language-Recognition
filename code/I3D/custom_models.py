@@ -47,7 +47,7 @@ class SignLanguageTransformer(nn.Module):
         super(SignLanguageTransformer, self).__init__()
         self.pos_encoder = PositionalEncoding(d_model)
         encoder_layers = nn.TransformerEncoderLayer(d_model=d_model, nhead=nhead)
-        self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers=num_layers, batch_first=True)
+        self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers=num_layers)
         self.classifier = nn.Linear(d_model, num_classes)
 
     def forward(self, x):
