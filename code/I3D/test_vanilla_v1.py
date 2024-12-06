@@ -125,10 +125,11 @@ def run(init_lr=0.1,
 
     model = SignLanguageRecognitionModel(feature_extractor, num_classes)
     
-    model.load_state_dict(torch.load("test_vanilla_v1.pth", weights_only=True))
-    
     model.cuda()
-    model = nn.DataParallel(i3d)
+    model = nn.DataParallel(model)
+
+    model.load_state_dict(torch.load("test_vanilla_v1.pth", weights_only=True))
+
     model.eval()
 
     all_outputs = []
