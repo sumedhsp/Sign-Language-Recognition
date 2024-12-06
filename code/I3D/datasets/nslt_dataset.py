@@ -121,7 +121,8 @@ def make_dataset(split_file, split, root, mode, num_classes):
             count_skipping += 1
             continue
 
-        label = data[vid]['action'][0] #np.zeros((num_classes, num_frames), np.float32)
+        class_id = data[vid]['action'][0]
+        label = class_id
 
         #for l in range(num_frames):
         #    c_ = data[vid]['action'][0]

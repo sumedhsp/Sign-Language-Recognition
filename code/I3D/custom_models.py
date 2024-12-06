@@ -17,7 +17,8 @@ class I3DFeatureExtractor(nn.Module):
         )
 
     def forward(self, x):
-        x = self.feature_extractor(x)
+        with torch.no_grad():
+            x = self.feature_extractor(x)
         return x
 
 #i3d_feature_extractor = I3DFeatureExtractor(i3d)
@@ -33,11 +34,11 @@ class PositionalEncoding(nn.Module):
         div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-np.log(10000.0) / d_model))  # [d_model/2]
         pe[:, 0::2] = torch.sin(position * div_term)  # [max_len, d_model/2]
         pe[:, 1::2] = torch.cos(position * div_term)  # [max_len, d_model/2]
-        pe = pe.unsqueeze(0)  # [1, max_len, d_model]
+        pe = pe.unsqueeze(1)  # [1, max_len, d_model]
         self.register_buffer('pe', pe)
 
     def forward(self, x):
-        x = x + self.pe[:, :x.size(1), :].to(x.device)
+        x = x + self.pe[:x.size(0), :]
         return self.dropout(x)
 
 # Define the Transformer Model
@@ -52,7 +53,7 @@ class SignLanguageTransformer(nn.Module):
     def forward(self, x):
         x = self.pos_encoder(x)
         x = self.transformer_encoder(x)
-        x = x.mean(dim=1)  # Mean pooling over the sequence length
+        x = x.mean(dim=0)  # Mean pooling over the sequence length
         x = self.classifier(x)
         return x
 
@@ -71,6 +72,6 @@ class SignLanguageRecognitionModel(nn.Module):
         # Spatial pooling
         features = F.adaptive_avg_pool3d(features, (frames, 1, 1))
         features = features.view(batch_size, channels, frames)  # [batch_size, channels, frames]
-        features = features.permute(0, 2, 1)  # [batch_size, frames, channels]
+        features = features.permute(2, 0, 1)  # [batch_size, frames, channels]
         logits = self.transformer(features)
         return logits
