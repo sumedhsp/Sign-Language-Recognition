@@ -60,7 +60,9 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
     feature_extractor = I3DFeatureExtractor(i3d)
     num_classes = dataset.num_classes
     model = SignLanguageRecognitionModelLite(feature_extractor, num_classes)
+
     
+    # used saved model
     if weights:
         print(f'Loading weights: {weights}')
         model.load_state_dict(torch.load(weights))
@@ -150,7 +152,7 @@ if __name__ == '__main__':
     root = {'word': '../../data/WLASL2000'}
     save_model = 'checkpoints/'
     train_split = 'preprocess/nslt_100.json'
-    weights = None
+    weights = 'checkpoints/best_model_lite_000025.pt'
     config_file = 'configfiles/asl100lite.ini'
 
     configs = Config(config_file)
