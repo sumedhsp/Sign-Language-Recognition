@@ -36,11 +36,11 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
     test_transforms = transforms.Compose([videotransforms.CenterCrop(224)])
 
     dataset = Dataset(train_split, 'train', root, mode, train_transforms)
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=configs.batch_size, shuffle=True, num_workers=0,
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=configs.batch_size, shuffle=True, num_workers=3,
                                              pin_memory=True)
 
     val_dataset = Dataset(train_split, 'test', root, mode, test_transforms)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=configs.batch_size, shuffle=True, num_workers=2,
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=configs.batch_size, shuffle=True, num_workers=1,
                                                  pin_memory=False)
     
     dataloaders = {'train': dataloader, 'test': val_dataloader}
