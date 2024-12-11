@@ -32,7 +32,7 @@ class PatchEmbedding(nn.Module):
         return x
 
 class VisionTransformer(nn.Module):
-    def __init__(self, img_size=224, patch_size=32, in_channels=3, embed_dim=256, num_heads=4, depth=4, num_classes=1000, mlp_dim=2048, dropout=0.1):
+    def __init__(self, img_size=224, patch_size=32, in_channels=1024, embed_dim=1024, num_heads=4, depth=4, num_classes=1000, mlp_dim=2048, dropout=0.1):
         super(VisionTransformer, self).__init__()
         self.patch_embed = PatchEmbedding(img_size, patch_size, in_channels, embed_dim)
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
@@ -65,7 +65,7 @@ class VisionTransformer(nn.Module):
 
 # Combine the I3D Feature Extractor and Vision Transformer
 class SignLanguageRecognitionModelViT(nn.Module):
-    def __init__(self, num_classes, img_size=224, patch_size=32, in_channels=3, embed_dim=256, num_heads=4, depth=4, mlp_dim=2048, dropout=0.1):
+    def __init__(self, num_classes, img_size=224, patch_size=32, in_channels=1024, embed_dim=1024, num_heads=4, depth=4, mlp_dim=2048, dropout=0.1):
         super(SignLanguageRecognitionModelViT, self).__init__()
         self.vit = VisionTransformer(
             img_size=img_size,
