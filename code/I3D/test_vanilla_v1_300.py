@@ -121,7 +121,7 @@ def run(init_lr=0.1,
     
     # setup the model
     i3d = InceptionI3d(300, in_channels=3)
-    i3d.load_state_dict(torch.load('i3d_pretrained_300.pt', weights_only=True))
+    i3d.load_state_dict(torch.load('best_model_20_58_300_vanilla_sumedh.pt', weights_only=True))
     feature_extractor = I3DFeatureExtractor(i3d)
     num_classes = val_dataset.num_classes
 
@@ -153,8 +153,8 @@ def run(init_lr=0.1,
 
     # Printing the labels and outputs to validate in local machine
     
-    np.savetxt('outputs.txt', outputs_np, delimiter=',')
-    np.savetxt('labels.txt', labels_np, delimiter=',')
+    np.savetxt('outputs_vanilla_300_sumedh.txt', outputs_np, delimiter=',')
+    np.savetxt('labels_vanilla_300_sumedh.txt.txt', labels_np, delimiter=',')
 
     topk = (1, 5, 10)
     topkmetrics = compute_topk_tp_fp(all_outputs, all_labels, num_classes, topk)
@@ -178,7 +178,7 @@ def run(init_lr=0.1,
     print(classification_report(all_labels, all_preds, digits=4))
 
     print("Confusion Matrix:")
-    np.save('confusionMatrix.npy', confusion_matrix(all_labels, all_preds))
+    np.save('confusionMatrix_vanilla_300_sumedh.npy', confusion_matrix(all_labels, all_preds))
 
 if __name__ == '__main__':
     # ================== test i3d on a dataset ==============
