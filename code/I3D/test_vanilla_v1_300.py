@@ -130,7 +130,7 @@ def run(init_lr=0.1,
     model.cuda()
     model = nn.DataParallel(model)
 
-    model.load_state_dict(torch.load("best_model_20_58_300_vanilla_sumedh.pth", weights_only=True))
+    model.load_state_dict(torch.load("./checkpoints/best_model_0_60.pth", weights_only=True))
 
     model.eval()
 
@@ -153,8 +153,8 @@ def run(init_lr=0.1,
 
     # Printing the labels and outputs to validate in local machine
     
-    np.savetxt('outputs_vanilla_300_sumedh.txt', outputs_np, delimiter=',')
-    np.savetxt('labels_vanilla_300_sumedh.txt.txt', labels_np, delimiter=',')
+    np.savetxt('outputs_vanilla_300_pranav.txt', outputs_np, delimiter=',')
+    np.savetxt('labels_vanilla_300_praanv.txt.txt', labels_np, delimiter=',')
 
     topk = (1, 5, 10)
     topkmetrics = compute_topk_tp_fp(all_outputs, all_labels, num_classes, topk)
@@ -178,7 +178,7 @@ def run(init_lr=0.1,
     print(classification_report(all_labels, all_preds, digits=4))
 
     print("Confusion Matrix:")
-    np.save('confusionMatrix_vanilla_300_sumedh.npy', confusion_matrix(all_labels, all_preds))
+    np.save('confusionMatrix_vanilla_300_pranav.npy', confusion_matrix(all_labels, all_preds))
 
 if __name__ == '__main__':
     # ================== test i3d on a dataset ==============
