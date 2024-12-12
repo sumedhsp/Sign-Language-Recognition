@@ -121,7 +121,7 @@ def run(init_lr=0.1,
     
     # setup the model
     i3d = InceptionI3d(300, in_channels=3)
-    i3d.load_state_dict(torch.load('best_model_20_58_300_vanilla_sumedh.pt', weights_only=True))
+    i3d.load_state_dict(torch.load('best_model_20_58_300_vanilla_sumedh.pth', weights_only=True))
     feature_extractor = I3DFeatureExtractor(i3d)
     num_classes = val_dataset.num_classes
 
