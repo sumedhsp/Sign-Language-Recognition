@@ -77,6 +77,8 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
     os.makedirs(checkpoint_dir, exist_ok=True)
     best_val_accuracy = 0
 
+    early_stop = False
+
     for epoch in range(num_epochs):
         # Training phase
         model.train()
@@ -149,13 +151,19 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
                 checkpoint_path = os.path.join(checkpoint_dir, f"best_model_{epoch}_{val_epoch_accuracy:.0f}.pth")
                 torch.save(model.state_dict(), checkpoint_path)
                 print(f"Validation accuracy improved. Model saved to {checkpoint_path}\n")
+            
             else:
+                print("Saving the model for reference..")
+                checkpoint_path = os.path.join(checkpoint_dir, f"checkpoint_model_{epoch}_{val_epoch_accuracy:.0f}.pth")
+                torch.save(model.state_dict(), checkpoint_path)
+
+            '''else:
                 epochs_no_improve += 1
                 print(f"No improvement in validation accuracy for {epochs_no_improve} epoch(s).\n")
                 if epochs_no_improve >= patience:
                     print("Early stopping triggered!")
                     early_stop = True
-                    break
+                    break'''
 
 
     if not early_stop:
