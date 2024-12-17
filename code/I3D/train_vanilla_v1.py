@@ -16,7 +16,15 @@ from configs import Config
 from pytorch_i3d import InceptionI3d
 from datasets.nslt_dataset import NSLT as Dataset
 
+from torch.utils.data import WeightedRandomSampler
+
+
 from custom_models import SignLanguageRecognitionModel, I3DFeatureExtractor  # Ensure your model script is imported
+
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+# os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+os.environ["CUDA_VISIBLE_DEVICES"] = ','.join(map(str, range(torch.cuda.device_count())))
+
 
 def calculate_accuracy(outputs, labels):
     # Get the index of the max log-probability
@@ -34,7 +42,33 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
     test_transforms = transforms.Compose([videotransforms.CenterCrop(224)])
 
     dataset = Dataset(train_split, 'train', root, mode, train_transforms)
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=configs.batch_size, shuffle=True, num_workers=0,
+
+    all_labels = [label for _, label, _ in dataset]
+    all_labels = np.array(all_labels)
+
+    class_counts = np.bincount(all_labels, minlength=dataset.num_classes)
+    epsilon = 1e-6
+    class_weights = 1.0 / (class_counts + epsilon)
+
+    class_weights = class_weights / class_weights.sum() * len(class_counts)
+
+    class_weights_tensor = torch.FloatTensor(class_weights)
+
+    print(f"Class Weights: {class_weights_tensor}")
+
+    sample_weights = class_weights[all_labels]
+    sample_weights_tensor = torch.DoubleTensor(sample_weights)
+
+    sampler = WeightedRandomSampler(weights=sample_weights_tensor, 
+                                    num_samples=len(sample_weights_tensor),
+                                    replacement=True)
+
+    print (f"Sampler created with {len(sampler)} samples")
+
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=configs.batch_size, 
+                                             sampler=sampler, 
+                                             shuffle=True, 
+                                             num_workers=0,
                                              pin_memory=True)
 
     val_dataset = Dataset(train_split, 'test', root, mode, test_transforms)
@@ -64,7 +98,7 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
 
     lr = 1e-4
     weight_decay = 1e-5  
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(weight=class_weights_tensor.to(device))
     optimizer = optim.Adam(model.module.transformer.parameters(), lr=lr, weight_decay=weight_decay)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 

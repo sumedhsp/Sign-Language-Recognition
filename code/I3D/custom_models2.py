@@ -21,8 +21,6 @@ class I3DFeatureExtractor(nn.Module):
         x = self.feature_extractor(x)
         return x
 
-#i3d_feature_extractor = I3DFeatureExtractor(i3d)
-
 # Define the Vision Transformer Model
 class SignLanguageViT(nn.Module):
     def __init__(self, num_classes):
