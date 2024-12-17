@@ -62,7 +62,8 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
 
     model = model.to(device)
     model = nn.DataParallel(model)
-
+    
+    model.load_state_dict(torch.load("checkpoint_model_20_43.pth", weights_only=True))
 
     lr = 1e-4
     weight_decay = 1e-5  
