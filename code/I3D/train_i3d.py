@@ -63,10 +63,10 @@ def run(configs,
 
     # setup the model
     if mode == 'flow':
-        i3d = InceptionI3d(100, in_channels=2)
+        i3d = InceptionI3d(400, in_channels=2)
         i3d.load_state_dict(torch.load('weights/flow_imagenet.pt'))
     else:
-        i3d = InceptionI3d(100, in_channels=3)
+        i3d = InceptionI3d(400, in_channels=3)
         i3d.load_state_dict(torch.load('rgb_imagenet.pt'))
 
     num_classes = dataset.num_classes
@@ -193,11 +193,11 @@ if __name__ == '__main__':
     root = {'word': '../../data/WLASL2000'}
 
     save_model = 'checkpoints/'
-    train_split = 'preprocess/nslt_100.json'
+    train_split = 'preprocess/nslt_2000.json'
 
     # weights = 'archived/asl2000/FINAL_nslt_2000_iters=5104_top1=32.48_top5=57.31_top10=66.31.pt'
     weights = None
-    config_file = 'configfiles/asl100.ini'
+    config_file = 'configfiles/asl2000.ini'
 
     configs = Config(config_file)
     print(root, train_split)
