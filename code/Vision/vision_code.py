@@ -317,7 +317,7 @@ class ViTLSTM(nn.Module):
         for param in self.vit.parameters():
             param.requires_grad = False  # Freeze all layers
 
-        fine_tune_layers = 6
+        fine_tune_layers = 8
         # Unfreeze the last 'fine_tune_layers' layers
         # Assuming ViT has 'encoder.layers' as a list
         for layer in self.vit.encoder.layers[-fine_tune_layers:]:
@@ -347,28 +347,6 @@ class ViTLSTM(nn.Module):
         final_feature = h_n[-1]  # [B, hidden_dim]
         return self.classifier(final_feature)
 
-        # x shape: [B, C, T, H, W]
-        '''B, C, T, H, W = x.shape
-        
-        # Reshape to [B*T, C, H, W] to process all frames at once
-        x = x.permute(0, 2, 1, 3, 4).contiguous().view(B*T, C, H, W)
-        
-        # Extract frame features using ViT
-        with torch.set_grad_enabled(self.training):
-            frame_features = self.vit(x)  # [B*T, D]
-        
-        # Reshape to [B, T, D]
-        frame_features = frame_features.view(B, T, -1)
-        
-        # Pass through LSTM
-        lstm_out, (h_n, c_n) = self.lstm(frame_features)  # lstm_out: [B, T, hidden_dim]
-        
-        # Use the last hidden state for classification
-        final_feature = h_n[-1]  # [B, hidden_dim]
-        out = self.classifier(final_feature)  # [B, num_classes]
-        
-        return out'''
-
 
 def get_model(num_classes, pretrained=True):
     model = ViTLSTM(num_classes=num_classes, hidden_dim=256, num_layers=4, pretrained=True)
@@ -384,10 +362,18 @@ def customize_model(model, num_classes):
 
 # --- Training and Evaluation Functions ---
 
+def calculate_accuracy(outputs, labels):
+    # Get the index of the max log-probability
+    _, preds = torch.max(outputs, 1)
+    correct = (preds == labels).sum().item()
+    accuracy = correct / labels.size(0) * 100
+    return accuracy
+
 def train_model(model, dataloaders, criterion, optimizer, scheduler, num_epochs=25, device='cuda'):
     since = time.time()
 
-    best_model_wts = copy.deepcopy(model.state_dict())
+    checkpoint_dir = './checkpoints'
+    os.makedirs(checkpoint_dir, exist_ok=True)
     best_acc = 0.0
 
     for epoch in range(num_epochs):
@@ -395,50 +381,85 @@ def train_model(model, dataloaders, criterion, optimizer, scheduler, num_epochs=
         print('-' * 10)
 
         # Each epoch has a training and validation phase
-        for phase in ['train', 'val']:
-            if phase == 'train':
-                model.train()  # Set model to training mode
+        model.train()  # Set model to training mode
+        
+        running_loss = 0.0
+        running_corrects = 0
+        total_batches = 0
+        # Iterate over data
+        # Train phase
+        for batch_idx, (inputs, labels, vids) in enumerate(dataloaders['train']):
+            inputs = inputs.to(device)  # [C, T, H, W]
+            labels = labels.to(device)
+
+            # Zero the parameter gradients
+            optimizer.zero_grad()
+
+            # Forward
+            outputs = model(inputs)  # [batch_size, num_classes]
+            _, preds = torch.max(outputs, 1)
+            loss = criterion(outputs, labels)
+
+            # Backward + optimize only if in training phase
+            loss.backward()
+            optimizer.step()
+
+            # Statistics
+            running_loss += loss.item() * inputs.size(0)
+            accuracy = calculate_accuracy(outputs, labels)
+            
+            running_corrects += accuracy
+            total_batches += 1
+
+        epoch_loss = running_loss / total_batches
+        epoch_accuracy = running_corrects / total_batches
+
+        print(f"Epoch [{epoch}/{num_epochs}] Training Loss: {epoch_loss:.4f}, "
+            f"Training Accuracy: {epoch_accuracy:.2f}%")
+        
+        scheduler.step()        
+        #print(f'{phase.capitalize()} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}')
+
+        if (epoch > 1 and epoch%10 == 0):
+            model.eval()
+            val_running_loss = 0.0
+            val_running_accuracy = 0.0
+            val_total_batches = 0
+            phase = 'val'
+
+            with torch.no_grad():
+                for val_batch_idx, (val_inputs, val_labels, val_vids) in enumerate(dataloaders[phase]):
+                    val_inputs = val_inputs.to(device)
+                    val_labels = val_labels.to(device)
+
+                    val_outputs = model(val_inputs)
+                    val_loss = criterion(val_outputs, val_labels)
+
+                    val_accuracy = calculate_accuracy(val_outputs, val_labels)
+
+                    val_running_loss += val_loss.item()
+                    val_running_accuracy += val_accuracy
+                    val_total_batches += 1
+
+            val_epoch_loss = val_running_loss / val_total_batches
+            val_epoch_accuracy = val_running_accuracy / val_total_batches
+
+            print(f"Epoch [{epoch}/{num_epochs}] Validation Loss: {val_epoch_loss:.4f}, "
+                f"Validation Accuracy: {val_epoch_accuracy:.2f}%\n")
+            
+
+            if (val_epoch_accuracy > best_acc):
+
+                checkpoint_path = os.path.join(checkpoint_dir, f"best_model_{epoch}_{val_epoch_accuracy:.0f}.pth")
+                torch.save(model.state_dict(), checkpoint_path)
+                print(f"Validation accuracy improved. Model saved to {checkpoint_path}\n")
+            
             else:
-                model.eval()   # Set model to evaluate mode
 
-            running_loss = 0.0
-            running_corrects = 0
+                print("Saving the model for reference..")
+                checkpoint_path = os.path.join(checkpoint_dir, f"checkpoint_model_{epoch}_{val_epoch_accuracy:.0f}.pth")
+                torch.save(model.state_dict(), checkpoint_path)
 
-            # Iterate over data
-            for inputs, labels, vids in dataloaders[phase]:
-                inputs = inputs.to(device)  # [C, T, H, W]
-                labels = labels.to(device)
-
-                # Zero the parameter gradients
-                optimizer.zero_grad()
-
-                # Forward
-                with torch.set_grad_enabled(phase == 'train'):
-                    outputs = model(inputs)  # [batch_size, num_classes]
-                    _, preds = torch.max(outputs, 1)
-                    loss = criterion(outputs, labels)
-
-                    # Backward + optimize only if in training phase
-                    if phase == 'train':
-                        loss.backward()
-                        optimizer.step()
-
-                # Statistics
-                running_loss += loss.item() * inputs.size(0)
-                running_corrects += torch.sum(preds == labels.data)
-
-            if phase == 'train':
-                scheduler.step()
-
-            epoch_loss = running_loss / len(dataloaders[phase].dataset)
-            epoch_acc = running_corrects.double() / len(dataloaders[phase].dataset)
-
-            print(f'{phase.capitalize()} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}')
-
-            # Deep copy the model
-            if phase == 'val' and epoch_acc > best_acc:
-                best_acc = epoch_acc
-                best_model_wts = copy.deepcopy(model.state_dict())
 
         print()
 
@@ -446,8 +467,6 @@ def train_model(model, dataloaders, criterion, optimizer, scheduler, num_epochs=
     print(f'Training complete in {time_elapsed //60:.0f}m {time_elapsed %60:.0f}s')
     print(f'Best Val Acc: {best_acc:.4f}')
 
-    # Load best model weights
-    model.load_state_dict(best_model_wts)
     return model
 
 
@@ -519,12 +538,14 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
+    model = nn.DataParallel(model)
+
     criterion = nn.CrossEntropyLoss()
     
     # Define loss function, optimizer, and scheduler
     #freeze_layers(model, freeze_until=6)
     # Re-define optimizer to only update unfrozen parameters
-    optimizer = optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-4, weight_decay=1e-4)
+    optimizer = optim.AdamW(filter(lambda p: p.requires_grad, model.module.parameters()), lr=1e-4, weight_decay=1e-4)
 
     # Optionally, define a different scheduler
     scheduler = lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
