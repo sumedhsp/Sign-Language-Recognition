@@ -79,7 +79,7 @@ def run(init_lr=0.1,
         i3d.load_state_dict(torch.load('weights/flow_imagenet.pt'))
     else:
         i3d = InceptionI3d(400, in_channels=3)
-        i3d.load_state_dict(torch.load('weights/rgb_imagenet.pt'))
+        i3d.load_state_dict(torch.load('rgb_imagenet.pt'))
     i3d.replace_logits(num_classes)
     i3d.load_state_dict(torch.load(weights))  # nslt_2000_000700.pt nslt_1000_010800 nslt_300_005100.pt(best_results)  nslt_300_005500.pt(results_reported) nslt_2000_011400
     i3d.cuda()
@@ -152,7 +152,7 @@ def ensemble(mode, root, train_split, weights, num_classes):
         i3d.load_state_dict(torch.load('weights/flow_imagenet.pt'))
     else:
         i3d = InceptionI3d(400, in_channels=3)
-        i3d.load_state_dict(torch.load('weights/rgb_imagenet.pt'))
+        i3d.load_state_dict(torch.load('rgb_imagenet.pt'))
     i3d.replace_logits(num_classes)
     i3d.load_state_dict(torch.load(weights))  # nslt_2000_000700.pt nslt_1000_010800 nslt_300_005100.pt(best_results)  nslt_300_005500.pt(results_reported) nslt_2000_011400
     i3d.cuda()
