@@ -18,8 +18,8 @@ import pandas as pd
 from torchvision import transforms
 from torch.utils.data import DataLoader
 
-#os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-#os.environ["CUDA_VISIBLE_DEVICES"] = ','.join(map(str, range(torch.cuda.device_count())))
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = ','.join(map(str, range(torch.cuda.device_count())))
 
 # --- Dataset and Utility Functions (Refactored NSLT Class) ---
 
