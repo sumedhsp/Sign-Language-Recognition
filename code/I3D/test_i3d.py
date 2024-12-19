@@ -16,7 +16,7 @@ import torch.nn.functional as F
 from pytorch_i3d import InceptionI3d
 
 # from nslt_dataset_all import NSLT as Dataset
-from datasets.nslt_dataset_all import NSLT as Dataset
+from datasets.nslt_dataset_all_phase1 import NSLT as Dataset
 import cv2
 
 
@@ -267,6 +267,6 @@ if __name__ == '__main__':
     root = '../../data/WLASL2000'
 
     train_split = 'preprocess/nslt_{}.json'.format(num_classes)
-    weights = 'archived/asl2000/FINAL_nslt_2000_iters=5104_top1=32.48_top5=57.31_top10=66.31.pt'
+    weights = 'i3d_pretrained_2000.pt'
 
     run(mode=mode, root=root, save_model=save_model, train_split=train_split, weights=weights)
