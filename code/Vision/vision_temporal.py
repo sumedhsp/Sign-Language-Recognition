@@ -305,73 +305,57 @@ import torch
 import torch.nn as nn
 from torchvision import models
 
-class ViTLSTM(nn.Module):
-    def __init__(self, num_classes, hidden_dim=256, num_layers=2, pretrained=True):
-        super(ViTLSTM, self).__init__()
+class ViTTemporalTransformer(nn.Module):
+    def __init__(self, num_classes, temporal_hidden_dim=256, num_transformer_layers=2, num_heads=8, pretrained=True):
+        super(ViTTemporalTransformer, self).__init__()
         
         # Load pre-trained ViT
         self.vit = models.vit_b_16(pretrained=pretrained)
         # Remove the classification head
         self.vit.heads = nn.Identity()
         
-        for param in self.vit.parameters():
-            param.requires_grad = False  # Freeze all layers
-
-        fine_tune_layers = 6
-        # Unfreeze the last 'fine_tune_layers' layers
-        # Assuming ViT has 'encoder.layers' as a list
-        for layer in self.vit.encoder.layers[-fine_tune_layers:]:
-            for param in layer.parameters():
-                param.requires_grad = True
-
-        with torch.no_grad():
-            dummy_input = torch.zeros(1, 3, 224, 224)  # [B, C, H, W]
-            dummy_output = self.vit(dummy_input)        # [1, D]
-            self.embed_dim = dummy_output.shape[1]
-            print(f"ViT embed_dim: {self.embed_dim}")   # Should print 768 for vit_b_16
-
-        # Define LSTM
-        self.lstm = nn.LSTM(input_size=self.embed_dim, hidden_size=hidden_dim, num_layers=num_layers, batch_first=True)
+        # Dynamically get embedding dimension
+        if hasattr(self.vit, "hidden_dim"):
+            self.embed_dim = self.vit.hidden_dim
+        elif hasattr(self.vit, "embedding_dim"):
+            self.embed_dim = self.vit.embedding_dim
+        else:
+            self.embed_dim = self.vit.heads.in_features  # Fallback
+        
+        # Define Temporal Transformer
+        encoder_layer = nn.TransformerEncoderLayer(d_model=self.embed_dim, nhead=num_heads, dim_feedforward=temporal_hidden_dim)
+        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_transformer_layers)
         
         # Classification layer
-        self.classifier = nn.Linear(hidden_dim, num_classes)
+        self.classifier = nn.Linear(self.vit.embed_dim, num_classes)
     
     def forward(self, x):
-        
-        B, C, T, H, W = x.shape
-        x = x.permute(0, 2, 1, 3, 4).contiguous().view(B*T, C, H, W)
-        with torch.no_grad():  # Avoid gradients for ViT
-            frame_features = self.vit(x)  # [B*T, embed_dim]
-        frame_features = frame_features.view(B, T, self.embed_dim)
-        lstm_out, (h_n, c_n) = self.lstm(frame_features)
-        final_feature = h_n[-1]  # [B, hidden_dim]
-        return self.classifier(final_feature)
-
         # x shape: [B, C, T, H, W]
-        '''B, C, T, H, W = x.shape
+        B, C, T, H, W = x.shape
         
         # Reshape to [B*T, C, H, W] to process all frames at once
         x = x.permute(0, 2, 1, 3, 4).contiguous().view(B*T, C, H, W)
         
         # Extract frame features using ViT
-        with torch.set_grad_enabled(self.training):
+        with torch.no_grad():
             frame_features = self.vit(x)  # [B*T, D]
         
-        # Reshape to [B, T, D]
-        frame_features = frame_features.view(B, T, -1)
+        # Reshape to [T, B, D] for Transformer (required shape: [S, N, E])
+        frame_features = frame_features.view(B, T, -1).permute(1, 0, 2)  # [T, B, D]
         
-        # Pass through LSTM
-        lstm_out, (h_n, c_n) = self.lstm(frame_features)  # lstm_out: [B, T, hidden_dim]
+        # Pass through Temporal Transformer
+        transformer_out = self.transformer(frame_features)  # [T, B, D]
         
-        # Use the last hidden state for classification
-        final_feature = h_n[-1]  # [B, hidden_dim]
-        out = self.classifier(final_feature)  # [B, num_classes]
+        # Aggregate temporal information (e.g., mean pooling)
+        aggregated = transformer_out.mean(dim=0)  # [B, D]
         
-        return out'''
-
+        # Classification
+        out = self.classifier(aggregated)  # [B, num_classes]
+        
+        return out
 
 def get_model(num_classes, pretrained=True):
-    model = ViTLSTM(num_classes=num_classes, hidden_dim=256, num_layers=2, pretrained=True)
+    model = ViTTemporalTransformer(num_classes=num_classes, hidden_dim=256, num_layers=2, pretrained=True)
 
     return model
 
@@ -502,7 +486,7 @@ if __name__ == "__main__":
     dataloaders = get_dataloaders(
         root_dir=root_dir,
         split_file=split_file,
-        batch_size=24,
+        batch_size=16,
         num_workers=4,
         num_frames=64
     )
@@ -524,7 +508,7 @@ if __name__ == "__main__":
     # Define loss function, optimizer, and scheduler
     #freeze_layers(model, freeze_until=6)
     # Re-define optimizer to only update unfrozen parameters
-    optimizer = optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-4, weight_decay=1e-4)
+    optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-5)
 
     # Optionally, define a different scheduler
     scheduler = lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
