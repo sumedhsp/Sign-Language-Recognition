@@ -518,8 +518,7 @@ if __name__ == "__main__":
     criterion = nn.CrossEntropyLoss()
     
     # Define loss function, optimizer, and scheduler
-    freeze_layers(model, freeze_until=6)
-
+    #freeze_layers(model, freeze_until=6)
     # Re-define optimizer to only update unfrozen parameters
     optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-5)
 
