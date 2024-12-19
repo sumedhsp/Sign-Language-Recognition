@@ -405,7 +405,7 @@ def train_model(model, dataloaders, criterion, optimizer, scheduler, num_epochs=
             optimizer.step()
 
             # Statistics
-            running_loss += loss.item() * inputs.size(0)
+            running_loss += loss.item() 
             accuracy = calculate_accuracy(outputs, labels)
             
             running_corrects += accuracy
