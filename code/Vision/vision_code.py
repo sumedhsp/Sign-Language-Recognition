@@ -521,7 +521,7 @@ if __name__ == "__main__":
     dataloaders = get_dataloaders(
         root_dir=root_dir,
         split_file=split_file,
-        batch_size=16,
+        batch_size=24,
         num_workers=4,
         num_frames=64
     )
