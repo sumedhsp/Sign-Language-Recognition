@@ -314,14 +314,19 @@ class ViTTemporalTransformer(nn.Module):
         # Remove the classification head
         self.vit.heads = nn.Identity()
         
-        # Dynamically get embedding dimension
-        if hasattr(self.vit, "hidden_dim"):
-            self.embed_dim = self.vit.hidden_dim
-        elif hasattr(self.vit, "embedding_dim"):
-            self.embed_dim = self.vit.embedding_dim
-        else:
-            self.embed_dim = self.vit.heads.in_features  # Fallback
-        
+        fine_tune_layers = 6
+        # Unfreeze the last 'fine_tune_layers' layers
+        # Assuming ViT has 'encoder.layers' as a list
+        for layer in self.vit.encoder.layers[-fine_tune_layers:]:
+            for param in layer.parameters():
+                param.requires_grad = True
+
+        with torch.no_grad():
+            dummy_input = torch.zeros(1, 3, 224, 224)  # [B, C, H, W]
+            dummy_output = self.vit(dummy_input)        # [1, D]
+            self.embed_dim = dummy_output.shape[1]
+            print(f"ViT embed_dim: {self.embed_dim}")   # Should print 768 for vit_b_16
+
         # Define Temporal Transformer
         encoder_layer = nn.TransformerEncoderLayer(d_model=self.embed_dim, nhead=num_heads, dim_feedforward=temporal_hidden_dim)
         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_transformer_layers)
