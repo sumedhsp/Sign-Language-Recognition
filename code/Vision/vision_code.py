@@ -371,7 +371,7 @@ class ViTLSTM(nn.Module):
 
 
 def get_model(num_classes, pretrained=True):
-    model = ViTLSTM(num_classes=num_classes, hidden_dim=256, num_layers=2, pretrained=True)
+    model = ViTLSTM(num_classes=num_classes, hidden_dim=256, num_layers=4, pretrained=True)
 
     return model
 
@@ -502,7 +502,7 @@ if __name__ == "__main__":
     dataloaders = get_dataloaders(
         root_dir=root_dir,
         split_file=split_file,
-        batch_size=24,
+        batch_size=16,
         num_workers=4,
         num_frames=64
     )
@@ -532,7 +532,7 @@ if __name__ == "__main__":
     #scheduler = lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
 
     # Train the model
-    num_epochs = 25
+    num_epochs = 100
     trained_model = train_model(
         model=model,
         dataloaders=dataloaders,
