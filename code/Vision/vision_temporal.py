@@ -18,8 +18,8 @@ import pandas as pd
 from torchvision import transforms
 from torch.utils.data import DataLoader
 
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = ','.join(map(str, range(torch.cuda.device_count())))
+#os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+#os.environ["CUDA_VISIBLE_DEVICES"] = ','.join(map(str, range(torch.cuda.device_count())))
 
 # --- Dataset and Utility Functions (Refactored NSLT Class) ---
 
@@ -327,7 +327,7 @@ class ViTTemporalTransformer(nn.Module):
         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_transformer_layers)
         
         # Classification layer
-        self.classifier = nn.Linear(self.vit.embed_dim, num_classes)
+        self.classifier = nn.Linear(self.embed_dim, num_classes)
     
     def forward(self, x):
         # x shape: [B, C, T, H, W]
@@ -355,7 +355,7 @@ class ViTTemporalTransformer(nn.Module):
         return out
 
 def get_model(num_classes, pretrained=True):
-    model = ViTTemporalTransformer(num_classes=num_classes, hidden_dim=256, num_layers=2, pretrained=True)
+    model = ViTTemporalTransformer(num_classes=num_classes, pretrained=True)
 
     return model
 
@@ -486,7 +486,7 @@ if __name__ == "__main__":
     dataloaders = get_dataloaders(
         root_dir=root_dir,
         split_file=split_file,
-        batch_size=16,
+        batch_size=32,
         num_workers=4,
         num_frames=64
     )
@@ -516,7 +516,7 @@ if __name__ == "__main__":
     #scheduler = lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
 
     # Train the model
-    num_epochs = 25
+    num_epochs = 100
     trained_model = train_model(
         model=model,
         dataloaders=dataloaders,
