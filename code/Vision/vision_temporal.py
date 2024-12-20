@@ -548,9 +548,9 @@ if __name__ == "__main__":
     #freeze_layers(model, freeze_until=6)
     # Re-define optimizer to only update unfrozen parameters
     optimizer = optim.AdamW([
-        {'params': model.vit.parameters(), 'lr': 1e-5},       # Pretrained ViT layers
-        {'params': model.lstm.parameters(), 'lr': 1e-4},      # LSTM layers
-        {'params': model.classifier.parameters(), 'lr': 1e-4}  # Classification layer
+        {'params': model.module.vit.parameters(), 'lr': 1e-5},       # Pretrained ViT layers
+        {'params': model.module.lstm.parameters(), 'lr': 1e-4},      # LSTM layers
+        {'params': model.module.classifier.parameters(), 'lr': 1e-4}  # Classification layer
     ], weight_decay=1e-4)
 
     # Optionally, define a different scheduler
