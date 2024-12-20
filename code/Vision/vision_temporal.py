@@ -324,7 +324,7 @@ import torch.nn as nn
 from torchvision import models
 
 class ViTTemporalTransformer(nn.Module):
-    def __init__(self, num_classes, temporal_hidden_dim=512, num_transformer_layers=2, num_heads=8, pretrained=True):
+    def __init__(self, num_classes, temporal_hidden_dim=256, num_transformer_layers=2, num_heads=8, pretrained=True):
         super(ViTTemporalTransformer, self).__init__()
         
         # Load pre-trained ViT
