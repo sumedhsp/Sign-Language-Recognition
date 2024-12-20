@@ -263,7 +263,7 @@ class VideoAugTransforms:
 from sklearn.utils.class_weight import compute_class_weight
 from torch.utils.data import WeightedRandomSampler
 
-def get_dataloaders(root_dir, split_file, device, batch_size=8, num_workers=4, num_frames=64):
+def get_dataloaders(root_dir, split_file, batch_size=8, num_workers=4, num_frames=64):
     dataloaders = {}
     for split in ['train', 'val', 'test']:
         if split == 'train':
