@@ -38,48 +38,39 @@ def video_to_tensor(pic):
 
 def load_rgb_frames_from_video(vid_root, vid, start, num, resize=(224, 224)):
     video_path = os.path.join(vid_root, vid + '.mp4')
-
     vidcap = cv2.VideoCapture(video_path)
-
     frames = []
-
     total_frames = int(vidcap.get(cv2.CAP_PROP_FRAME_COUNT))
-
     vidcap.set(cv2.CAP_PROP_POS_FRAMES, start)
+    
     for offset in range(min(num, total_frames - start)):
         success, img = vidcap.read()
         if not success:
             break  # Stop if no more frames
 
-        # Resize if necessary
-        h, w, c = img.shape
-        if h < 226 or w < 226:
-            d = 226.0 - min(h, w)
-            sc = 1 + d / min(h, w)
-            img = cv2.resize(img, dsize=(0, 0), fx=sc, fy=sc, interpolation=cv2.INTER_LINEAR)
-        if h > resize[1] or w > resize[0]:
-            img = cv2.resize(img, resize, interpolation=cv2.INTER_LINEAR)
+        # Resize to the expected size
+        img = cv2.resize(img, resize, interpolation=cv2.INTER_LINEAR)
+        
+        # Convert BGR to RGB
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-        # Normalize to [-1, 1]
-        img = (img.astype(np.float32) / 255.0) * 2.0 - 1.0
-
+        # Normalize to [0, 1]
+        img = img.astype(np.float32) / 255.0
+        
+        # Apply ImageNet normalization
+        mean = np.array([0.485, 0.456, 0.406])
+        std = np.array([0.229, 0.224, 0.225])
+        img = (img - mean) / std
+        
         frames.append(img)
-
+    
     vidcap.release()
-
-    if len(frames) < num:
-        # Pad by repeating the last frame
-        pad_length = num - len(frames)
-        if pad_length > 0:
-            pad_frame = frames[-1]
-            frames.extend([pad_frame] * pad_length)
-
 
     if len(frames) == 0:
         print(f"Warning: No frames loaded for video {video_path}")
-
+    
+    # Return frames as a NumPy array
     return np.asarray(frames, dtype=np.float32)
-
 
 def make_dataset(split_file, split, root, mode, num_classes):
     dataset = []
@@ -306,7 +297,7 @@ import torch.nn as nn
 from torchvision import models
 
 class ViTTemporalTransformer(nn.Module):
-    def __init__(self, num_classes, temporal_hidden_dim=256, num_transformer_layers=2, num_heads=8, pretrained=True):
+    def __init__(self, num_classes, temporal_hidden_dim=256, num_transformer_layers=4, num_heads=8, pretrained=True):
         super(ViTTemporalTransformer, self).__init__()
         
         # Load pre-trained ViT
@@ -314,7 +305,7 @@ class ViTTemporalTransformer(nn.Module):
         # Remove the classification head
         self.vit.heads = nn.Identity()
         
-        fine_tune_layers = 6
+        fine_tune_layers = 12
         # Unfreeze the last 'fine_tune_layers' layers
         # Assuming ViT has 'encoder.layers' as a list
         for layer in self.vit.encoder.layers[-fine_tune_layers:]:
@@ -556,7 +547,11 @@ if __name__ == "__main__":
     # Define loss function, optimizer, and scheduler
     #freeze_layers(model, freeze_until=6)
     # Re-define optimizer to only update unfrozen parameters
-    optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-5)
+    optimizer = optim.AdamW([
+        {'params': model.vit.parameters(), 'lr': 1e-5},       # Pretrained ViT layers
+        {'params': model.lstm.parameters(), 'lr': 1e-4},      # LSTM layers
+        {'params': model.classifier.parameters(), 'lr': 1e-4}  # Classification layer
+    ], weight_decay=1e-4)
 
     # Optionally, define a different scheduler
     scheduler = lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
