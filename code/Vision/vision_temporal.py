@@ -549,7 +549,7 @@ if __name__ == "__main__":
     # Re-define optimizer to only update unfrozen parameters
     optimizer = optim.AdamW([
         {'params': model.module.vit.parameters(), 'lr': 1e-5},       # Pretrained ViT layers
-        {'params': model.module.lstm.parameters(), 'lr': 1e-4},      # LSTM layers
+        {'params': model.module.transformer.parameters(), 'lr': 1e-4},      # LSTM layers
         {'params': model.module.classifier.parameters(), 'lr': 1e-4}  # Classification layer
     ], weight_decay=1e-4)
 
