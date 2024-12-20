@@ -553,7 +553,7 @@ if __name__ == "__main__":
 
     model = nn.DataParallel(model)
 
-    criterion = nn.CrossEntropyLoss(weight=class_weights)
+    criterion = nn.CrossEntropyLoss()
     
     # Define loss function, optimizer, and scheduler
     #freeze_layers(model, freeze_until=6)
