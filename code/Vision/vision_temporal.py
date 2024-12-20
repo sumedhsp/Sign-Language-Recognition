@@ -332,7 +332,7 @@ class ViTTemporalTransformer(nn.Module):
         # Remove the classification head
         self.vit.heads = nn.Identity()
         
-        fine_tune_layers = 12
+        fine_tune_layers = 8
         # Unfreeze the last 'fine_tune_layers' layers
         # Assuming ViT has 'encoder.layers' as a list
         for layer in self.vit.encoder.layers[-fine_tune_layers:]:
