@@ -317,7 +317,7 @@ class ViTLSTM(nn.Module):
         for param in self.vit.parameters():
             param.requires_grad = False  # Freeze all layers
 
-        fine_tune_layers = 8
+        fine_tune_layers = 10
         # Unfreeze the last 'fine_tune_layers' layers
         # Assuming ViT has 'encoder.layers' as a list
         for layer in self.vit.encoder.layers[-fine_tune_layers:]:
@@ -349,7 +349,7 @@ class ViTLSTM(nn.Module):
 
 
 def get_model(num_classes, pretrained=True):
-    model = ViTLSTM(num_classes=num_classes, hidden_dim=256, num_layers=4, pretrained=True)
+    model = ViTLSTM(num_classes=num_classes, hidden_dim=512, num_layers=2, pretrained=True)
 
     return model
 
@@ -521,7 +521,7 @@ if __name__ == "__main__":
     dataloaders = get_dataloaders(
         root_dir=root_dir,
         split_file=split_file,
-        batch_size=24,
+        batch_size=32,
         num_workers=4,
         num_frames=64
     )
