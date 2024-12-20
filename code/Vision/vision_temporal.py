@@ -281,40 +281,19 @@ def get_dataloaders(root_dir, split_file, device, batch_size=8, num_workers=4, n
         )
         
         shuffle = True if split == 'train' else False
-        dataloader = None
-        class_weights = None
-        if (split == 'train'):
-            labels = [label for _, label, _, _, _ in dataset.data]
-            class_weights = compute_class_weight('balanced', classes=np.unique(labels), y=labels)
-            class_weights = torch.tensor(class_weights, dtype=torch.float).to(device)
-
-            class_sample_counts = np.array([len(np.where(np.array(labels) == t)[0]) for t in np.unique(labels)])
-            weight = 1. / class_sample_counts
-            samples_weight = np.array([weight[t] for t in labels])
-            samples_weight = torch.from_numpy(samples_weight).double()
-
-            sampler = WeightedRandomSampler(weights=samples_weight, num_samples=len(samples_weight), replacement=True)
-
-            dataloader = DataLoader(dataset,
-                                    batch_size=batch_size,
-                                    sampler=sampler,
-                                    num_workers=4,
-                                    pin_memory=True)
-
-        else:
-
-            dataloader = DataLoader(
-                dataset,
-                batch_size=batch_size,
-                shuffle=shuffle,
-                num_workers=num_workers,
-                pin_memory=True
-            )
+        
+        dataloader = DataLoader(
+            dataset,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            num_workers=num_workers,
+            pin_memory=True
+        )
 
         dataloaders[split] = dataloader
 
 
-    return dataloaders, class_weights
+    return dataloaders
 
 
 # --- Model Definition ---
@@ -350,24 +329,12 @@ class ViTTemporalTransformer(nn.Module):
         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_transformer_layers)
         
         dropout=0.3
-        # Dropout
-        self.dropout = nn.Dropout(dropout)
-
+        
         # Classification layer
         self.classifier = nn.Linear(self.embed_dim, num_classes)
     
     def forward(self, x):
-        B, C, T, H, W = x.shape
-        x = x.permute(0, 2, 1, 3, 4).contiguous().view(B*T, C, H, W)
-        frame_features = self.vit(x)  # [B*T, embed_dim]
-        frame_features = frame_features.view(B, T, self.embed_dim).permute(1, 0, 2)  # [T, B, D]
-        transformer_out = self.transformer(frame_features)  # [T, B, D]
-        aggregated = transformer_out.mean(dim=0)  # [B, D]
-        aggregated = self.dropout(aggregated)
-        out = self.classifier(aggregated)  # [B, num_classes]
-        return out
-    
-        '''# x shape: [B, C, T, H, W]
+        # x shape: [B, C, T, H, W]
         B, C, T, H, W = x.shape
         
         # Reshape to [B*T, C, H, W] to process all frames at once
@@ -389,7 +356,7 @@ class ViTTemporalTransformer(nn.Module):
         # Classification
         out = self.classifier(aggregated)  # [B, num_classes]
         
-        return out'''
+        return out
 
 def get_model(num_classes, pretrained=True):
     model = ViTTemporalTransformer(num_classes=num_classes, pretrained=True)
@@ -560,15 +527,12 @@ if __name__ == "__main__":
     }
     split_file = 'nslt_100.json'  # Replace with your split file path
     
-    # Move the model to GPU if available
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
 
     # Create DataLoaders
-    dataloaders, class_weights = get_dataloaders(
+    dataloaders = get_dataloaders(
         root_dir=root_dir,
         split_file=split_file,
-        device=device,
         batch_size=32,
         num_workers=4,
         num_frames=64
@@ -578,6 +542,9 @@ if __name__ == "__main__":
     num_classes = get_num_class(split_file=split_file)
     print(f"Number of classes: {num_classes}")
 
+    # Move the model to GPU if available
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
     # Initialize the model
     model = get_model(num_classes=num_classes, pretrained=True)
     #model = customize_model(model, num_classes)
