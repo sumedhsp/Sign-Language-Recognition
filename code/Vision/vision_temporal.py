@@ -260,8 +260,10 @@ class VideoAugTransforms:
 
 
 # --- DataLoader Creation ---
+from sklearn.utils.class_weight import compute_class_weight
+from torch.utils.data import WeightedRandomSampler
 
-def get_dataloaders(root_dir, split_file, batch_size=8, num_workers=4, num_frames=64):
+def get_dataloaders(root_dir, split_file, device, batch_size=8, num_workers=4, num_frames=64):
     dataloaders = {}
     for split in ['train', 'val', 'test']:
         if split == 'train':
@@ -279,15 +281,40 @@ def get_dataloaders(root_dir, split_file, batch_size=8, num_workers=4, num_frame
         )
         
         shuffle = True if split == 'train' else False
-        dataloader = DataLoader(
-            dataset,
-            batch_size=batch_size,
-            shuffle=shuffle,
-            num_workers=num_workers,
-            pin_memory=True
-        )
+        dataloader = None
+        class_weights = None
+        if (split == 'train'):
+            labels = [label for _, label, _, _, _ in dataset.data]
+            class_weights = compute_class_weight('balanced', classes=np.unique(labels), y=labels)
+            class_weights = torch.tensor(class_weights, dtype=torch.float).to(device)
+
+            class_sample_counts = np.array([len(np.where(np.array(labels) == t)[0]) for t in np.unique(labels)])
+            weight = 1. / class_sample_counts
+            samples_weight = np.array([weight[t] for t in labels])
+            samples_weight = torch.from_numpy(samples_weight).double()
+
+            sampler = WeightedRandomSampler(weights=samples_weight, num_samples=len(samples_weight), replacement=True)
+
+            dataloader = DataLoader(dataset,
+                                    batch_size=batch_size,
+                                    sampler=sampler,
+                                    num_workers=4,
+                                    pin_memory=True)
+
+        else:
+
+            dataloader = DataLoader(
+                dataset,
+                batch_size=batch_size,
+                shuffle=shuffle,
+                num_workers=num_workers,
+                pin_memory=True
+            )
+
         dataloaders[split] = dataloader
-    return dataloaders
+
+
+    return dataloaders, class_weights
 
 
 # --- Model Definition ---
@@ -297,7 +324,7 @@ import torch.nn as nn
 from torchvision import models
 
 class ViTTemporalTransformer(nn.Module):
-    def __init__(self, num_classes, temporal_hidden_dim=256, num_transformer_layers=4, num_heads=8, pretrained=True):
+    def __init__(self, num_classes, temporal_hidden_dim=512, num_transformer_layers=2, num_heads=8, pretrained=True):
         super(ViTTemporalTransformer, self).__init__()
         
         # Load pre-trained ViT
@@ -322,11 +349,25 @@ class ViTTemporalTransformer(nn.Module):
         encoder_layer = nn.TransformerEncoderLayer(d_model=self.embed_dim, nhead=num_heads, dim_feedforward=temporal_hidden_dim)
         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_transformer_layers)
         
+        dropout=0.3
+        # Dropout
+        self.dropout = nn.Dropout(dropout)
+
         # Classification layer
         self.classifier = nn.Linear(self.embed_dim, num_classes)
     
     def forward(self, x):
-        # x shape: [B, C, T, H, W]
+        B, C, T, H, W = x.shape
+        x = x.permute(0, 2, 1, 3, 4).contiguous().view(B*T, C, H, W)
+        frame_features = self.vit(x)  # [B*T, embed_dim]
+        frame_features = frame_features.view(B, T, self.embed_dim).permute(1, 0, 2)  # [T, B, D]
+        transformer_out = self.transformer(frame_features)  # [T, B, D]
+        aggregated = transformer_out.mean(dim=0)  # [B, D]
+        aggregated = self.dropout(aggregated)
+        out = self.classifier(aggregated)  # [B, num_classes]
+        return out
+    
+        '''# x shape: [B, C, T, H, W]
         B, C, T, H, W = x.shape
         
         # Reshape to [B*T, C, H, W] to process all frames at once
@@ -348,7 +389,7 @@ class ViTTemporalTransformer(nn.Module):
         # Classification
         out = self.classifier(aggregated)  # [B, num_classes]
         
-        return out
+        return out'''
 
 def get_model(num_classes, pretrained=True):
     model = ViTTemporalTransformer(num_classes=num_classes, pretrained=True)
@@ -519,10 +560,15 @@ if __name__ == "__main__":
     }
     split_file = 'nslt_100.json'  # Replace with your split file path
     
+    # Move the model to GPU if available
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
+
     # Create DataLoaders
-    dataloaders = get_dataloaders(
+    dataloaders, class_weights = get_dataloaders(
         root_dir=root_dir,
         split_file=split_file,
+        device=device,
         batch_size=32,
         num_workers=4,
         num_frames=64
@@ -536,13 +582,11 @@ if __name__ == "__main__":
     model = get_model(num_classes=num_classes, pretrained=True)
     #model = customize_model(model, num_classes)
 
-    # Move the model to GPU if available
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
     model = nn.DataParallel(model)
 
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
     
     # Define loss function, optimizer, and scheduler
     #freeze_layers(model, freeze_until=6)
