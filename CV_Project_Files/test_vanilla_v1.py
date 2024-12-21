@@ -185,7 +185,7 @@ if __name__ == '__main__':
     num_classes = 100
     save_model = './checkpoints/'
 
-    root = '../../data/WLASL2000'
+    root = 'data/WLASL2000'
 
     train_split = 'preprocess/nslt_{}.json'.format(num_classes)
     weights = 'test_vanilla_v1.pth'

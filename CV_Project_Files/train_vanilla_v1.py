@@ -199,7 +199,7 @@ def run(configs, mode='rgb', root='/ssd/Charades_v1_rgb', train_split='charades/
 
 if __name__ == '__main__':
     mode = 'rgb'
-    root = {'word': '../../data/WLASL2000'}
+    root = {'word': 'data/WLASL2000'}
     save_model = 'checkpoints/'
     train_split = 'preprocess/nslt_100.json'
     weights = None
