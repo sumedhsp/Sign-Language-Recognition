@@ -22,14 +22,14 @@
 ## Running the Project
 ### Training
 - To train the model, use one of the training scripts. For example:
-  python train_vanilla_v1_2000.py
+  `python train_vanilla_v1_2000.py`
 
 ### Testing
 - To evaluate the model, use one of the testing scripts. For example:
-  python test_vanilla_v1_2000.py
+  `python test_vanilla_v1_2000.py`
 
 
 ## Notes
-- Ensure the Vision/ and configfiles/ folders contain necessary configuration files for the model and preprocessing pipeline.
+- Ensure the preprocess/ and configfiles/ folders contain necessary configuration files for the model and preprocessing pipeline.
 
 - If you encounter any issues, verify that all dependencies are installed and that the dataset and weights are correctly placed.
