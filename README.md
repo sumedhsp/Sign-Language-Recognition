@@ -43,6 +43,9 @@ We use the **Word-Level American Sign Language (WLASL) dataset**, which contains
 - **Multi-head Self-Attention** helps the model focus on important frames.
 - **Final classifier** predicts the most likely ASL word from 2000 possible classes.
 
+![image](https://github.com/user-attachments/assets/7d95dd44-0d27-4274-a08b-5b9ce9774d0b)
+
+
 ### **🔹 Alternative Approach: Vision Transformer (ViT)**
 - We experimented with **Vision Transformers (ViT)** for feature extraction.
 - **Challenges:** Requires **high computational power** and **larger datasets**.
